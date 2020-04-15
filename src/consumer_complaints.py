@@ -1,78 +1,65 @@
-#! /usr/bin python3
-# consumer_complaints.py - reads input/complaints.csv file from input dir and creates a report written to output/report.csv
+#! /user/bin/python3
+"""consumer_complaints.py - reads large csv, maps fields to named tuples, uses generator with reduce to compute total, 
+uses reducer func with default dict to create list of dicts""" 
 
-import csv
-from collections import Counter
+import csv, itertools
+from collections import Counter, namedtuple, defaultdict
+from functools import reduce
 
 # data file paths
 indata = '../input/complaints_11.csv'
 outdata = '../output/report.csv'
 
-class ReadBigCSV(object):
-    def __init__(self, path):
-        self.path  = path
-        self._length = None
-        self._counter = None
+# namedtuple instead of dict
+fields = ("Date_received", "Product", "Sub_product", "Issue", "Sub_issue", "Consumer_complaint_narrative", "Company_public_response", "Company", "State", "ZIP_code", "Tags", "Consumer_consent_provided", "Submitted_via", "Date_sent_to_company", "Company_response_to_consumer", "Timely_response", "Consumer_disputed", "Complaint_ID")
 
-    
-    def __iter__(self):
-        self._length = 0
-        self._counter_p = Counter()
-        self._counter_d = Counter()
-        with open(self.path, 'r') as data:
-            reader = csv.DictReader(data)
-            for row in reader:
-                # save stats
-                self._length += 1
-                self._counter_p[row['Product']] += 1
-                self._counter_d[row['Date received']] += 1
-                yield row
+print(fields)
 
+Complaints = namedtuple("Complaints", fields)
 
-    def __len__(self):
-        if self._length is None:
-            for row in self:
-                continue
-            return self._length
+print(Complaints._fields)
+
+# use defaultdict to reduce fields
+#cols_dd = defaultdict(list)
+
+# input datafile very large so use csv module with generator to read input data one line at a time
+def read_big_csv(file_path):
+    """Designed to read large csv files efficiently with low overhead using csv module with generator.
+    Assumes 1st row of csv contain field names."""
+    with open(file_path, 'r') as data:
+        data.readline()
+        reader = csv.reader(data)
+        #cols = (cols_dd['Product'], cols_dd['Date_received'], cols_dd['Company']) 
+        for row in map(Complaints._make, reader):
+            yield row[1], row[0], row[7]  #from (row[i] for i in cols)
 
 
-    @property
-    def counter_p(self):
-        if self._counter_p is None:
-            for row in self:
-                continue
-        return self._counter_p
+def reducer(acc, val):
+    acc[val[0]].append(val[1])
+    return acc
 
 
-    @property
-    def products(self):
-        return self.counter_p.keys()
-
-
-    @property
-    def counter_d(self):
-        if self._counter_d is None:
-            for row in self:
-                continue
-        return self._counter_d
-
-
-    @property
-    def dates(self):
-        return self.counter_d.keys()
-
-
-    def reset(self):
-        """Used if break during read"""
-        self._length = None
-        self._counter_p = None
-        self._counter_d = None
-
+# use reduce to calculate totals and subtotals
+total_complaints = reduce(lambda acc, val: acc + 1, read_big_csv(indata), 0)
+prod_date = reduce(reducer, read_big_csv(indata), defaultdict(list))
+print(prod_date)
 
 if __name__ == "__main__":
-    reader = ReadBigCSV(indata)
-    print("%i total complaints with  %i products and %i dates" % (len(reader), len(reader.products), len(reader.dates)))
-    for i, row in enumerate(reader):
-        print(i, row['Product'], row['Date received'])
+    print("Program starting")
+    for row in read_big_csv(indata):
+        prod_date
 
+#cnt_dd = defaultdict(int)
+for prod, dt in prod_date.items():
+    print(prod, len(dt))
+
+
+'''
+for prod, dt in cnt_dd.items():
+    print("Total complaints for Product: ", prod, dt)
+'''
+
+print("Total complaints in file: ", total_complaints)
+
+print("Program finished")
 
