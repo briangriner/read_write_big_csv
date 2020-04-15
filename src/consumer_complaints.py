@@ -12,12 +12,10 @@ outdata = '../output/report.csv'
 
 # namedtuple instead of dict
 fields = ("Date_received", "Product", "Sub_product", "Issue", "Sub_issue", "Consumer_complaint_narrative", "Company_public_response", "Company", "State", "ZIP_code", "Tags", "Consumer_consent_provided", "Submitted_via", "Date_sent_to_company", "Company_response_to_consumer", "Timely_response", "Consumer_disputed", "Complaint_ID")
-
-print(fields)
+#print(fields)
 
 Complaints = namedtuple("Complaints", fields)
-
-print(Complaints._fields)
+#print(Complaints._fields)
 
 # use defaultdict to reduce fields
 #cols_dd = defaultdict(list)
@@ -35,31 +33,37 @@ def read_big_csv(file_path):
 
 
 def reducer(acc, val):
-    acc[val[0]].append(val[1])
+    acc[val[0], val[1][0:4]].append(val[2])
     return acc
 
 
 # use reduce to calculate totals and subtotals
 total_complaints = reduce(lambda acc, val: acc + 1, read_big_csv(indata), 0)
 prod_date = reduce(reducer, read_big_csv(indata), defaultdict(list))
-print(prod_date)
+print(type(prod_date))
+
 
 if __name__ == "__main__":
     print("Program starting")
     for row in read_big_csv(indata):
         prod_date
 
-#cnt_dd = defaultdict(int)
+
+print("prod_date")
+print("-"*72)
+print(prod_date)
+
+wdata = open(outdata, "a", newline="")
+writer = csv.writer(wdata, delimiter=",", quoting=csv.QUOTE_NONNUMERIC)
+names = ["product", "year", "total number of complaints", "total number of companies"] 
+writer.writerow(names)
 for prod, dt in prod_date.items():
-    print(prod, len(dt))
+    row = [str(prod[0]), prod[1], len(dt), len(set(dt))]
+    print(row)
+    writer.writerow(row)  
+  
 
-
-'''
-for prod, dt in cnt_dd.items():
-    print("Total complaints for Product: ", prod, dt)
-'''
-
+print("-"*72)
 print("Total complaints in file: ", total_complaints)
-
 print("Program finished")
 
