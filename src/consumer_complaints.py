@@ -1,15 +1,16 @@
 #! /usr/bin/python3
 """consumer_complaints.py - reads large csv, maps fields to named tuples, uses generator with reduce to compute total, 
-uses reducer func with default dict to create list of dicts""" 
+uses reducer func with default dict to create list of dicts.L
+PATHS ASSUME REPO IN HOME DIR. IF NOT IN HOME ADJUST PATHS IN LINES 12, 13.""" 
 
 import csv, itertools, os
 from pathlib import Path
 from collections import Counter, namedtuple, defaultdict
 from functools import reduce
 
-# data file paths
-indata =  'insight_consumer_complaint_reporting/input/complaints_11.csv'
-outdata = 'insight_consumer_complaint_reporting/output/report.csv'
+# data file paths - CHECK PATHS
+indata =  'read_write_big_csv-master/input/complaints_11.csv'
+outdata = 'read_write_big_csv-master/output/report.csv'
 
 # pathlib .joinpath()
 home_path = Path.home()
